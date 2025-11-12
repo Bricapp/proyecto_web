@@ -5,8 +5,12 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "Proyecto Monorepo",
-  description: "Frontend de autenticación con Next.js"
+  title: "Finnova Finanzas",
+  description:
+    "Panel financiero de Finnova para gestionar presupuestos, gastos, ingresos y reportes en tiempo real.",
+  icons: {
+    icon: "/favicon.svg"
+  }
 };
 
 export default function RootLayout({
