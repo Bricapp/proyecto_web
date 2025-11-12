@@ -3,12 +3,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import clsx from "clsx";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { login } from "@/lib/api";
+import { useAuth } from "@/components/auth/auth-context";
 
 const schema = z.object({
   username: z.string().min(1, "El usuario es obligatorio"),
@@ -22,7 +21,7 @@ type LoginFormProps = {
 };
 
 export function LoginForm({ variant = "light" }: LoginFormProps) {
-  const router = useRouter();
+  const { login } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
@@ -35,23 +34,15 @@ export function LoginForm({ variant = "light" }: LoginFormProps) {
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       try {
-        return await login(values);
+        await login(values);
       } catch (error) {
         if (error instanceof TypeError) {
           throw new Error(
             "No se pudo establecer conexión con el servidor. Intenta nuevamente en unos segundos."
           );
         }
-
         throw error;
       }
-    },
-    onSuccess: (data) => {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("accessToken", data.access);
-        localStorage.setItem("refreshToken", data.refresh);
-      }
-      router.push("/perfil");
     },
     onError: (error: unknown) => {
       if (error instanceof Error) {
