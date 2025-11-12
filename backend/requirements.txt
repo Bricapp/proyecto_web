@@ -8,3 +8,4 @@ pytest-django>=4.8
 black>=24.0
 isort>=5.13
 ruff>=0.4
+django-cors-headers==4.4.0
