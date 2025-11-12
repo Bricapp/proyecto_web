@@ -18,7 +18,8 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
 ALLOWED_HOSTS = [host for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if host] or [
     "localhost",
     "127.0.0.1",
-    "192.168.0.169",   # 👈 agrega tu IP LAN
+    "192.168.0.169",
+    "finova.em-ind.cl",   # 👈 agrega tu IP LAN
 ]
 
 
@@ -59,7 +60,16 @@ CSRF_TRUSTED_ORIGINS = [
     "http://192.168.0.169:3000",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://finova.em-ind.cl",
+    
 ]
+
+# Muy importante detrás de proxy:
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Opcional en prod:
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
 
 
 ROOT_URLCONF = "core.urls"
