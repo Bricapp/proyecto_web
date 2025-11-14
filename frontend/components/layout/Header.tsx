@@ -132,13 +132,31 @@ export function Header({ onToggleSidebar }: HeaderProps) {
               )}
             >
               <Link
-                href="/configuracion"
+                href="/dashboard/perfil"
                 className="flex items-center gap-3 rounded-xl px-3 py-2 text-slate-700 transition hover:bg-emerald-50"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
-                  <path d="M6 12h12M12 6v12" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M5 7h14M12 7v10" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                Configuración y perfil
+                Perfil
+              </Link>
+              <Link
+                href="/dashboard/configuracion"
+                className="flex items-center gap-3 rounded-xl px-3 py-2 text-slate-700 transition hover:bg-emerald-50"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
+                  <path
+                    d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M19.4 15a1.65 1.65 0 01.33 1.82l-.06.12a2 2 0 01-1.73 1h-1.09a6.94 6.94 0 01-1.22 1.22v1.09a2 2 0 01-1 1.73l-.12.06a1.65 1.65 0 01-1.82-.33l-.77-.77a6.93 6.93 0 01-1.72 0l-.77.77a1.65 1.65 0 01-1.82.33l-.12-.06a2 2 0 01-1-1.73v-1.09a6.94 6.94 0 01-1.22-1.22H5.06a2 2 0 01-1.73-1l-.06-.12a1.65 1.65 0 01.33-1.82l.77-.77a6.93 6.93 0 010-1.72l-.77-.77a1.65 1.65 0 01-.33-1.82l.06-.12a2 2 0 011.73-1h1.09c.36-.46.77-.87 1.22-1.22V5.06a2 2 0 011-1.73l.12-.06a1.65 1.65 0 011.82.33l.77.77a6.93 6.93 0 011.72 0l.77-.77a1.65 1.65 0 011.82-.33l.12.06a2 2 0 011 1.73v1.09c.46.36.87.77 1.22 1.22h1.09a2 2 0 011.73 1l.06.12a1.65 1.65 0 01-.33 1.82l-.77.77a6.93 6.93 0 010 1.72z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Configuración
               </Link>
               <button
                 type="button"
