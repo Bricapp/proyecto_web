@@ -2,31 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 
 import { FinovaLogo } from "@/components/FinovaLogo";
 import { useAuth } from "@/components/auth/auth-context";
+import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { LoginForm } from "@/components/forms/login-form";
 import { Poppins } from "next/font/google";
-
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: {
-            client_id: string;
-            callback: (response: { credential?: string }) => void;
-            ux_mode?: "popup" | "redirect";
-          }) => void;
-          renderButton: (element: HTMLElement, options: Record<string, unknown>) => void;
-          cancel: () => void;
-          disableAutoSelect?: () => void;
-        };
-      };
-    };
-  }
-}
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -104,99 +86,12 @@ const features = [
 export default function LoginPage() {
   const router = useRouter();
   const { accessToken, isLoading, loginWithGoogle } = useAuth();
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  const googleButtonRef = useRef<HTMLDivElement | null>(null);
-  const scriptRef = useRef<HTMLScriptElement | null>(null);
-  const [googleError, setGoogleError] = useState<string | null>(null);
-  const buttonRenderedRef = useRef(false);
-  const scriptInjectedRef = useRef(false);
 
   useEffect(() => {
     if (!isLoading && accessToken) {
-      router.replace("/");
+      router.replace("/dashboard");
     }
   }, [accessToken, isLoading, router]);
-
-  useEffect(() => {
-    if (!googleClientId || typeof window === "undefined" || !googleButtonRef.current) {
-      return undefined;
-    }
-
-    const handleCredential = async (response: { credential?: string }) => {
-      if (!response.credential) {
-        setGoogleError("No pudimos obtener la respuesta de Google. Intenta nuevamente.");
-        return;
-      }
-      setGoogleError(null);
-      try {
-        await loginWithGoogle(response.credential);
-      } catch (error) {
-        const message =
-          error instanceof Error && error.message.trim().length > 0
-            ? error.message
-            : "No pudimos iniciar sesión con Google. Intenta más tarde.";
-        setGoogleError(message);
-      }
-    };
-
-    const renderButton = () => {
-      if (!window.google || !googleButtonRef.current || buttonRenderedRef.current) {
-        return;
-      }
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleCredential,
-        ux_mode: "popup"
-      });
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        theme: "outline",
-        size: "large",
-        width: "100%",
-        text: "signin_with",
-        shape: "pill"
-      });
-      buttonRenderedRef.current = true;
-    };
-
-    if (window.google) {
-      renderButton();
-      return () => {
-        window.google?.accounts.id.cancel();
-        window.google?.accounts.id.disableAutoSelect?.();
-        buttonRenderedRef.current = false;
-      };
-    }
-
-    if (scriptInjectedRef.current) {
-      return undefined;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      renderButton();
-    };
-    script.onerror = () => {
-      setGoogleError("No se pudo cargar el inicio de sesión con Google.");
-      scriptInjectedRef.current = false;
-    };
-    document.body.appendChild(script);
-    scriptRef.current = script;
-    scriptInjectedRef.current = true;
-
-    return () => {
-      if (scriptRef.current) {
-        document.body.removeChild(scriptRef.current);
-        scriptRef.current = null;
-      }
-      window.google?.accounts.id.cancel();
-      window.google?.accounts.id.disableAutoSelect?.();
-      buttonRenderedRef.current = false;
-      scriptInjectedRef.current = false;
-    };
-  }, [googleClientId, loginWithGoogle]);
 
   return (
     <main
@@ -276,21 +171,15 @@ export default function LoginPage() {
                 </p>
               </div>
               <div className="mt-8 space-y-6">
-                {googleClientId && (
-                  <>
-                    <div ref={googleButtonRef} className="flex justify-center" />
-                    {googleError && (
-                      <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-                        {googleError}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-slate-400">
-                      <span className="h-px flex-1 bg-slate-200" />
-                      <span>o ingresa con tu correo</span>
-                      <span className="h-px flex-1 bg-slate-200" />
-                    </div>
-                  </>
-                )}
+                <GoogleAuthButton
+                  onCredential={loginWithGoogle}
+                  buttonType="signin_with"
+                />
+                <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-slate-400">
+                  <span className="h-px flex-1 bg-slate-200" />
+                  <span>o ingresa con tu correo</span>
+                  <span className="h-px flex-1 bg-slate-200" />
+                </div>
                 <LoginForm />
                 <div className="text-center text-sm">
                   <Link className="font-semibold text-emerald-600 hover:text-emerald-500" href="/recuperar-clave">

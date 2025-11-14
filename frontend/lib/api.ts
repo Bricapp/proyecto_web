@@ -8,6 +8,7 @@ export type LoginPayload = {
 export type RegisterPayload = {
   email: string;
   password: string;
+  recaptcha_token: string;
   first_name?: string;
   last_name?: string;
   phone?: string;

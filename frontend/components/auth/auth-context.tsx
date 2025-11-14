@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRefreshToken(tokens.refresh);
         setUser(tokens.user);
         persistTokens(tokens);
-        router.push("/");
+        router.replace("/dashboard");
       } finally {
         setIsLoading(false);
       }
@@ -127,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRefreshToken(tokens.refresh);
         setUser(tokens.user);
         persistTokens(tokens);
-        router.push("/");
+        router.replace("/dashboard");
       } finally {
         setIsLoading(false);
       }
@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRefreshToken(tokens.refresh);
         setUser(tokens.user);
         persistTokens(tokens);
-        router.push("/");
+        router.replace("/dashboard");
       } finally {
         setIsLoading(false);
       }

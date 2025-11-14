@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .utils import generate_unique_username
+from .utils import generate_unique_username, verify_recaptcha_token
 
 User = get_user_model()
 
@@ -123,6 +123,7 @@ class RegisterSerializer(serializers.Serializer):
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
     phone = serializers.CharField(required=False, allow_blank=True)
+    recaptcha_token = serializers.CharField(write_only=True)
 
     default_error_messages = {
         "email_taken": "Ya existe una cuenta registrada con este correo electrónico.",
@@ -138,7 +139,36 @@ class RegisterSerializer(serializers.Serializer):
         validate_password(value)
         return value
 
+    def validate(self, attrs: dict) -> dict:
+        token = attrs.get("recaptcha_token", "").strip()
+        if not token:
+            raise serializers.ValidationError(
+                {"recaptcha_token": "Debes completar el captcha para continuar."}
+            )
+
+        request = self.context.get("request") if hasattr(self, "context") else None
+        remote_ip = None
+        if request is not None:
+            remote_ip = request.META.get("REMOTE_ADDR") or None
+
+        try:
+            is_valid = verify_recaptcha_token(token, remote_ip=remote_ip)
+        except RuntimeError as exc:  # pragma: no cover - depends on environment
+            raise serializers.ValidationError(
+                {"detail": "La verificación de seguridad no está configurada."}
+            ) from exc
+
+        if not is_valid:
+            raise serializers.ValidationError(
+                {
+                    "recaptcha_token": "No pudimos verificar el captcha. Intenta nuevamente.",
+                }
+            )
+
+        return attrs
+
     def create(self, validated_data: dict) -> User:
+        validated_data.pop("recaptcha_token", None)
         email = validated_data["email"]
         password = validated_data["password"]
         first_name = validated_data.get("first_name", "").strip()

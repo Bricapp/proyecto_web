@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { RegisterPayload } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
+import { GoogleRecaptchaWidget } from "@/components/forms/google-recaptcha-widget";
 
 const schema = z
   .object({
@@ -20,6 +21,7 @@ const schema = z
       .string()
       .min(8, "La contraseña debe tener al menos 8 caracteres"),
     password_confirm: z.string().min(1, "Debes confirmar tu contraseña"),
+    recaptcha_token: z.string().min(1, "Debes completar el captcha"),
   })
   .superRefine((data, ctx) => {
     if (data.password !== data.password_confirm) {
@@ -37,6 +39,7 @@ function buildPayload(values: FormValues): RegisterPayload {
   const payload: RegisterPayload = {
     email: values.email.trim(),
     password: values.password,
+    recaptcha_token: values.recaptcha_token,
   };
 
   const firstName = values.first_name?.trim();
@@ -60,9 +63,12 @@ function buildPayload(values: FormValues): RegisterPayload {
 export function RegisterForm() {
   const { register: registerAccount } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
+  const [captchaMessage, setCaptchaMessage] = useState<string | null>(null);
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
   const {
     register: registerField,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -73,6 +79,7 @@ export function RegisterForm() {
       email: "",
       password: "",
       password_confirm: "",
+      recaptcha_token: "",
     },
   });
 
@@ -104,6 +111,7 @@ export function RegisterForm() {
 
   const onSubmit = (values: FormValues) => {
     setFormError(null);
+    setCaptchaMessage(null);
     mutation.mutate(values);
   };
 
@@ -125,8 +133,18 @@ export function RegisterForm() {
     []
   );
 
+  if (!siteKey) {
+    return (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        La verificación reCAPTCHA no está configurada. Contacta al equipo de soporte para completar tu
+        registro.
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <input type="hidden" {...registerField("recaptcha_token")} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <label className={labelStyles} htmlFor="first_name">
@@ -243,6 +261,32 @@ export function RegisterForm() {
             </p>
           )}
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <GoogleRecaptchaWidget
+          siteKey={siteKey}
+          onVerify={(token) => {
+            setFormError(null);
+            setCaptchaMessage(null);
+            setValue("recaptcha_token", token, { shouldValidate: true });
+          }}
+          onExpire={() => {
+            setCaptchaMessage("El captcha expiró, por favor verifica nuevamente.");
+            setValue("recaptcha_token", "", { shouldValidate: true });
+          }}
+          onError={() => {
+            setCaptchaMessage(
+              "No se pudo cargar el captcha. Recarga la página e inténtalo nuevamente."
+            );
+            setValue("recaptcha_token", "", { shouldValidate: true });
+          }}
+        />
+        {(errors.recaptcha_token || captchaMessage) && (
+          <p className={errorTextStyles} role="alert">
+            {errors.recaptcha_token?.message ?? captchaMessage}
+          </p>
+        )}
       </div>
 
       {formError && (

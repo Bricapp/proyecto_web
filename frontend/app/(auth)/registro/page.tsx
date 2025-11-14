@@ -6,6 +6,7 @@ import { useEffect } from "react";
 
 import { FinovaLogo } from "@/components/FinovaLogo";
 import { useAuth } from "@/components/auth/auth-context";
+import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { RegisterForm } from "@/components/forms/register-form";
 import { Poppins } from "next/font/google";
 
@@ -51,11 +52,11 @@ const features = [
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { accessToken, isLoading } = useAuth();
+  const { accessToken, isLoading, loginWithGoogle } = useAuth();
 
   useEffect(() => {
     if (!isLoading && accessToken) {
-      router.replace("/");
+      router.replace("/dashboard");
     }
   }, [accessToken, isLoading, router]);
 
@@ -120,6 +121,12 @@ export default function RegisterPage() {
                 </p>
               </div>
               <div className="mt-8 space-y-6">
+                <GoogleAuthButton onCredential={loginWithGoogle} buttonType="signup_with" />
+                <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-slate-400">
+                  <span className="h-px flex-1 bg-slate-200" />
+                  <span>o regístrate con tu correo</span>
+                  <span className="h-px flex-1 bg-slate-200" />
+                </div>
                 <RegisterForm />
                 <div className="text-center text-sm text-slate-500">
                   ¿Ya tienes una cuenta?{' '}
