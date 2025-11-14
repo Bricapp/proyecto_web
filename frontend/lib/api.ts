@@ -5,6 +5,14 @@ export type LoginPayload = {
   password: string;
 };
 
+export type RegisterPayload = {
+  email: string;
+  password: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+};
+
 export type TokenResponse = {
   access: string;
   refresh: string;
@@ -99,6 +107,10 @@ type ResumenResponse = Omit<ResumenFinanciero, "total_ingresos" | "total_gastos"
 
 export async function login(payload: LoginPayload): Promise<TokenResponse> {
   return request<TokenResponse>("/api/v1/auth/login/", { method: "POST", body: payload });
+}
+
+export async function register(payload: RegisterPayload): Promise<TokenResponse> {
+  return request<TokenResponse>("/api/v1/auth/register/", { method: "POST", body: payload });
 }
 
 export async function fetchProfile(accessToken: string): Promise<UserProfile> {

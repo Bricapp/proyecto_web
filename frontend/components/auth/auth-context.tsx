@@ -13,12 +13,14 @@ import {
 
 import {
   LoginPayload,
+  RegisterPayload,
   TokenResponse,
   UserProfile,
   confirmPasswordReset,
   fetchProfile,
   login as loginRequest,
   loginWithGoogle as loginWithGoogleRequest,
+  register as registerRequest,
   requestPasswordReset,
   updateProfile as updateProfileRequest
 } from "@/lib/api";
@@ -29,6 +31,7 @@ type AuthContextValue = {
   refreshToken: string | null;
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<void>;
+  register: (payload: RegisterPayload) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: (options?: { redirect?: boolean }) => void;
   refreshProfile: (token?: string) => Promise<void>;
@@ -103,6 +106,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       try {
         const tokens = await loginRequest(payload);
+        setAccessToken(tokens.access);
+        setRefreshToken(tokens.refresh);
+        setUser(tokens.user);
+        persistTokens(tokens);
+        router.push("/");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [persistTokens, router]
+  );
+
+  const register = useCallback(
+    async (payload: RegisterPayload) => {
+      setIsLoading(true);
+      try {
+        const tokens = await registerRequest(payload);
         setAccessToken(tokens.access);
         setRefreshToken(tokens.refresh);
         setUser(tokens.user);
@@ -197,6 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshToken,
       isLoading,
       login,
+      register,
       loginWithGoogle,
       logout,
       refreshProfile,
@@ -210,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshToken,
       isLoading,
       login,
+      register,
       loginWithGoogle,
       logout,
       refreshProfile,

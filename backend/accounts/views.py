@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import json
 import os
-import secrets
-import unicodedata
 from urllib import error as urllib_error
 from urllib import parse as urllib_parse
 from urllib import request as urllib_request
@@ -29,21 +27,12 @@ from .serializers import (
     ChangePasswordSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    RegisterSerializer,
     UserSerializer,
 )
+from .utils import generate_unique_username
 
 User = get_user_model()
-
-
-def _slugify_username(value: str) -> str:
-    """Generate a slug-like username from any value."""
-
-    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
-    value = value.lower()
-    allowed = "abcdefghijklmnopqrstuvwxyz0123456789_"
-    cleaned = [char if char in allowed else "_" for char in value]
-    collapsed = "".join(cleaned).strip("_")
-    return collapsed or secrets.token_hex(4)
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -185,6 +174,26 @@ class PasswordResetConfirmView(APIView):
         return Response({"detail": "Tu contraseña fue actualizada correctamente."})
 
 
+class RegisterView(APIView):
+    """Create a new user using email and password credentials."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.save()
+
+        refresh = RefreshToken.for_user(user)
+        data = {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "user": UserSerializer(user, context={"request": request}).data,
+        }
+        return Response(data, status=status.HTTP_201_CREATED)
+
+
 class GoogleLoginView(APIView):
     """Handle Google OAuth login exchanging an ID token for JWT tokens."""
 
@@ -233,12 +242,7 @@ class GoogleLoginView(APIView):
         if user is None:
             created = True
             user = User()
-            base_username = _slugify_username(email.split("@")[0])
-            username = base_username
-            counter = 1
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}{counter}"
-                counter += 1
+            username = generate_unique_username(email.split("@")[0])
             user.username = username
             user.email = email
             user.first_name = given_name

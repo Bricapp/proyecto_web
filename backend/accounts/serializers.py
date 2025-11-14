@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
+from .utils import generate_unique_username
+
 User = get_user_model()
 
 
@@ -111,3 +113,52 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     def validate_password(self, value: str) -> str:
         validate_password(value)
         return value
+
+
+class RegisterSerializer(serializers.Serializer):
+    """Validate and create a new user account."""
+
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
+
+    default_error_messages = {
+        "email_taken": "Ya existe una cuenta registrada con este correo electrónico.",
+    }
+
+    def validate_email(self, value: str) -> str:
+        email = value.strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            self.fail("email_taken")
+        return email
+
+    def validate_password(self, value: str) -> str:
+        validate_password(value)
+        return value
+
+    def create(self, validated_data: dict) -> User:
+        email = validated_data["email"]
+        password = validated_data["password"]
+        first_name = validated_data.get("first_name", "").strip()
+        last_name = validated_data.get("last_name", "").strip()
+        phone = validated_data.get("phone", "").strip()
+
+        username = generate_unique_username(email.split("@")[0])
+
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+        )
+
+        if phone:
+            profile = getattr(user, "profile", None)
+            if profile is not None:
+                profile.phone = phone
+                profile.save(update_fields=["phone"])
+
+        return user

@@ -299,7 +299,11 @@ export default function LoginPage() {
                 </div>
               </div>
               <p className="mt-6 text-center text-xs text-slate-400">
-                ¿Aún no eres parte de Finova? Contáctanos y descubre cómo optimizar tus finanzas.
+                ¿Aún no eres parte de Finova?{' '}
+                <Link className="font-semibold text-emerald-300 hover:text-emerald-200" href="/registro">
+                  Crea tu cuenta gratis
+                </Link>{' '}
+                y comienza hoy mismo.
               </p>
             </div>
           </div>
