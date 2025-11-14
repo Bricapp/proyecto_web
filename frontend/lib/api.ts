@@ -1,4 +1,7 @@
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "production" ? "https://finova.inerva.cl/api" : "http://localhost:8000")
+).replace(/\/$/, "");
 
 export type LoginPayload = {
   email: string;
@@ -18,6 +21,11 @@ export type TokenResponse = {
   access: string;
   refresh: string;
   user: UserProfile;
+};
+
+export type AuthConfig = {
+  google_client_id: string;
+  recaptcha_site_key: string;
 };
 
 export type UserProfile = {
@@ -112,6 +120,10 @@ export async function login(payload: LoginPayload): Promise<TokenResponse> {
 
 export async function register(payload: RegisterPayload): Promise<TokenResponse> {
   return request<TokenResponse>("/api/v1/auth/register/", { method: "POST", body: payload });
+}
+
+export async function fetchAuthConfig(): Promise<AuthConfig> {
+  return request<AuthConfig>("/api/v1/auth/config/");
 }
 
 export async function fetchProfile(accessToken: string): Promise<UserProfile> {

@@ -11,6 +11,11 @@ import { RegisterPayload } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
 import { GoogleRecaptchaWidget } from "@/components/forms/google-recaptcha-widget";
 
+type RegisterFormProps = {
+  siteKey?: string | null;
+  isLoading?: boolean;
+};
+
 const schema = z
   .object({
     first_name: z.string().max(150, "El nombre es muy largo").optional(),
@@ -60,11 +65,11 @@ function buildPayload(values: FormValues): RegisterPayload {
   return payload;
 }
 
-export function RegisterForm() {
+export function RegisterForm({ siteKey, isLoading = false }: RegisterFormProps) {
   const { register: registerAccount } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [captchaMessage, setCaptchaMessage] = useState<string | null>(null);
-  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  const effectiveSiteKey = siteKey?.trim() ?? "";
   const {
     register: registerField,
     handleSubmit,
@@ -133,7 +138,26 @@ export function RegisterForm() {
     []
   );
 
-  if (!siteKey) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white/90 p-6">
+        <div className="flex items-center gap-3 text-sm text-slate-500">
+          <svg
+            aria-hidden
+            className="h-5 w-5 animate-spin text-emerald-500"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="4" opacity="0.3" />
+            <path d="M21 12a9 9 0 00-9-9" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+          </svg>
+          <span>Cargando configuración de seguridad…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!effectiveSiteKey) {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
         La verificación reCAPTCHA no está configurada. Contacta al equipo de soporte para completar tu
@@ -265,7 +289,7 @@ export function RegisterForm() {
 
       <div className="space-y-2">
         <GoogleRecaptchaWidget
-          siteKey={siteKey}
+          siteKey={effectiveSiteKey}
           onVerify={(token) => {
             setFormError(null);
             setCaptchaMessage(null);

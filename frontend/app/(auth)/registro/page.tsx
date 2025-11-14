@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { FinovaLogo } from "@/components/FinovaLogo";
 import { useAuth } from "@/components/auth/auth-context";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
+import { useAuthConfig } from "@/components/auth/use-auth-config";
 import { RegisterForm } from "@/components/forms/register-form";
 import { Poppins } from "next/font/google";
 
@@ -53,6 +54,31 @@ const features = [
 export default function RegisterPage() {
   const router = useRouter();
   const { accessToken, isLoading, loginWithGoogle } = useAuth();
+  const {
+    data: authConfig,
+    isLoading: isConfigLoading,
+    error: configError
+  } = useAuthConfig();
+
+  const googleClientId = useMemo(
+    () =>
+      (
+        authConfig?.google_client_id ??
+        process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ??
+        "336385441890-aglscohlmtrsvka174f695j7l2u9f75f.apps.googleusercontent.com"
+      ).trim(),
+    [authConfig]
+  );
+
+  const recaptchaSiteKey = useMemo(
+    () =>
+      (
+        authConfig?.recaptcha_site_key ??
+        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ??
+        ""
+      ).trim(),
+    [authConfig]
+  );
 
   useEffect(() => {
     if (!isLoading && accessToken) {
@@ -121,13 +147,24 @@ export default function RegisterPage() {
                 </p>
               </div>
               <div className="mt-8 space-y-6">
-                <GoogleAuthButton onCredential={loginWithGoogle} buttonType="signup_with" />
+                <GoogleAuthButton
+                  clientId={googleClientId}
+                  isLoading={isConfigLoading}
+                  onCredential={loginWithGoogle}
+                  buttonType="signup_with"
+                />
                 <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-slate-400">
                   <span className="h-px flex-1 bg-slate-200" />
                   <span>o regístrate con tu correo</span>
                   <span className="h-px flex-1 bg-slate-200" />
                 </div>
-                <RegisterForm />
+                <RegisterForm siteKey={recaptchaSiteKey} isLoading={isConfigLoading} />
+                {configError && (
+                  <p className="text-xs text-amber-600">
+                    No se pudo sincronizar la configuración automática de autenticación. Usamos los valores
+                    predeterminados.
+                  </p>
+                )}
                 <div className="text-center text-sm text-slate-500">
                   ¿Ya tienes una cuenta?{' '}
                   <Link className="font-semibold text-emerald-600 hover:text-emerald-500" href="/login">

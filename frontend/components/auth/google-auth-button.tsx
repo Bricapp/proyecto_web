@@ -27,14 +27,18 @@ type GoogleAuthButtonProps = {
   onCredential: (token: string) => Promise<void>;
   buttonType?: "signin_with" | "signup_with" | "continue_with";
   className?: string;
+  clientId?: string | null;
+  isLoading?: boolean;
 };
 
 export function GoogleAuthButton({
   onCredential,
   buttonType = "signin_with",
-  className
+  className,
+  clientId,
+  isLoading = false
 }: GoogleAuthButtonProps) {
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const googleClientId = clientId?.trim();
   const buttonRef = useRef<HTMLDivElement | null>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
   const buttonRenderedRef = useRef(false);
@@ -126,6 +130,17 @@ export function GoogleAuthButton({
     };
   }, [googleClientId, onCredential, buttonType]);
 
+  if (isLoading) {
+    return (
+      <div
+        className={clsx(
+          "h-12 w-full animate-pulse rounded-full bg-slate-200/80",
+          className
+        )}
+      />
+    );
+  }
+
   if (!googleClientId) {
     return (
       <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
@@ -145,4 +160,3 @@ export function GoogleAuthButton({
     </div>
   );
 }
-

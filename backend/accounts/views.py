@@ -280,3 +280,17 @@ class GoogleLoginView(APIView):
             "user": UserSerializer(user, context={"request": request}).data,
         }
         return Response(data, status=status.HTTP_200_OK)
+
+
+class AuthConfigView(APIView):
+    """Expose public authentication configuration values."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response(
+            {
+                "google_client_id": getattr(settings, "GOOGLE_OAUTH_CLIENT_ID", ""),
+                "recaptcha_site_key": getattr(settings, "GOOGLE_RECAPTCHA_SITE_KEY", ""),
+            }
+        )

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { FinovaLogo } from "@/components/FinovaLogo";
 import { useAuth } from "@/components/auth/auth-context";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
+import { useAuthConfig } from "@/components/auth/use-auth-config";
 import { LoginForm } from "@/components/forms/login-form";
 import { Poppins } from "next/font/google";
 
@@ -86,6 +87,21 @@ const features = [
 export default function LoginPage() {
   const router = useRouter();
   const { accessToken, isLoading, loginWithGoogle } = useAuth();
+  const {
+    data: authConfig,
+    isLoading: isConfigLoading,
+    error: configError
+  } = useAuthConfig();
+
+  const googleClientId = useMemo(
+    () =>
+      (
+        authConfig?.google_client_id ??
+        process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ??
+        "336385441890-aglscohlmtrsvka174f695j7l2u9f75f.apps.googleusercontent.com"
+      ).trim(),
+    [authConfig]
+  );
 
   useEffect(() => {
     if (!isLoading && accessToken) {
@@ -172,9 +188,17 @@ export default function LoginPage() {
               </div>
               <div className="mt-8 space-y-6">
                 <GoogleAuthButton
+                  clientId={googleClientId}
+                  isLoading={isConfigLoading}
                   onCredential={loginWithGoogle}
                   buttonType="signin_with"
                 />
+                {configError && (
+                  <p className="text-xs text-amber-600">
+                    No se pudo sincronizar la configuración automática de autenticación. Usamos los valores
+                    predeterminados.
+                  </p>
+                )}
                 <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-slate-400">
                   <span className="h-px flex-1 bg-slate-200" />
                   <span>o ingresa con tu correo</span>
