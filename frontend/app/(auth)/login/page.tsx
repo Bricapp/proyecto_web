@@ -1,5 +1,11 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
 import { FinovaLogo } from "@/components/FinovaLogo";
 import { LoginForm } from "@/components/forms/login-form";
+import { useAuth } from "@/components/auth/auth-context";
 import { Poppins } from "next/font/google";
 
 const poppins = Poppins({
@@ -76,6 +82,15 @@ const features = [
 ];
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { accessToken, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && accessToken) {
+      router.replace("/");
+    }
+  }, [accessToken, isLoading, router]);
+
   return (
     <main
       className={`${poppins.className} relative min-h-screen overflow-hidden bg-[#0F172A]`}
