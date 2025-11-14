@@ -48,7 +48,12 @@ class PartidaSerializer(serializers.ModelSerializer[Partida]):
         queryset = obj.gastos.filter(fecha__gte=inicio, fecha__lt=fin)
         if usuario is not None and usuario.is_authenticated:
             queryset = queryset.filter(usuario=usuario)
-        return queryset.aggregate(total=Sum("monto")).get("total") or Decimal("0.00")
+        total = queryset.aggregate(total=Sum("monto")).get("total")
+        if total is None:
+            return Decimal("0.00")
+        if not isinstance(total, Decimal):
+            total = Decimal(str(total))
+        return total.quantize(Decimal("0.01"))
 
     def get_disponible_mes(self, obj: Partida) -> Decimal:
         gastado = self.get_gastado_mes(obj)
@@ -148,9 +153,9 @@ class ResumenFinancieroSerializer(serializers.Serializer):
             "total_gastos": total_gastos,
             "saldo": saldo,
             "ahorro_porcentaje": ahorro_porcentaje,
-            "gastos_por_categoria": categorias,
-            "partidas": PartidaSerializer(partidas, many=True).data,
+            "gastos_por_categoria": dict(categorias),
+            "partidas": partidas,
             "sugerencias": sugerencias,
-            "ingresos_recientes": IngresoSerializer(ingresos[:5], many=True).data,
-            "gastos_recientes": GastoSerializer(gastos[:5], many=True).data,
+            "ingresos_recientes": ingresos[:5],
+            "gastos_recientes": gastos[:5],
         }

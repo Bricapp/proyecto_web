@@ -1,6 +1,7 @@
 """Viewsets and API endpoints for finance module."""
 from __future__ import annotations
 
+import logging
 from decimal import Decimal
 
 from django.db.models import Q
@@ -16,6 +17,9 @@ from .serializers import (
     PartidaSerializer,
     ResumenFinancieroSerializer,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class BaseOwnerViewSet(viewsets.ModelViewSet):
@@ -150,12 +154,21 @@ class ResumenFinancieroView(APIView):
                     f"Estás por alcanzar el límite de {partida.nombre}. Monitorea tus próximos gastos en esta partida."
                 )
 
-        resumen_data = ResumenFinancieroSerializer.build(
-            ingresos=ingresos,
-            gastos=gastos,
-            partidas=partidas,
-            sugerencias=sugerencias,
+        try:
+            resumen_payload = ResumenFinancieroSerializer.build(
+                ingresos=ingresos,
+                gastos=gastos,
+                partidas=partidas,
+                sugerencias=sugerencias,
+            )
+        except Exception:  # pragma: no cover - defensive logging branch
+            logger.exception("Error al construir el resumen financiero", extra={"user_id": request.user.id})
+            return Response(
+                {"detail": "No fue posible generar el resumen financiero."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        serializer = ResumenFinancieroSerializer(
+            resumen_payload, context={"request": request}
         )
-        serializer = ResumenFinancieroSerializer(data=resumen_data)
-        serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
