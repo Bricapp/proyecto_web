@@ -64,6 +64,12 @@ class GastoSerializer(serializers.ModelSerializer[Gasto]):
     """Serializer for expense records."""
 
     partida_nombre = serializers.SerializerMethodField()
+    categoria = serializers.CharField(
+        allow_blank=True, allow_null=True, required=False
+    )
+    observacion = serializers.CharField(
+        allow_blank=True, allow_null=True, required=False
+    )
 
     class Meta:
         model = Gasto
@@ -89,15 +95,32 @@ class GastoSerializer(serializers.ModelSerializer[Gasto]):
     def validate(self, attrs: dict) -> dict:
         categoria = attrs.get("categoria")
         partida = attrs.get("partida")
+
+        if self.instance is not None:
+            if categoria in (None, ""):
+                categoria = self.instance.categoria
+            if partida is None:
+                partida = self.instance.partida
+
         if not categoria and not partida:
             raise serializers.ValidationError(
                 "Debes seleccionar una partida o indicar una categoría para el gasto."
             )
+
+        if "categoria" in attrs and attrs["categoria"] is None:
+            attrs["categoria"] = ""
+        if "observacion" in attrs and attrs["observacion"] is None:
+            attrs["observacion"] = ""
+
         return super().validate(attrs)
 
 
 class IngresoSerializer(serializers.ModelSerializer[Ingreso]):
     """Serializer for income records."""
+
+    observacion = serializers.CharField(
+        allow_blank=True, allow_null=True, required=False
+    )
 
     class Meta:
         model = Ingreso
@@ -111,6 +134,11 @@ class IngresoSerializer(serializers.ModelSerializer[Ingreso]):
             "updated_at",
         ]
         read_only_fields = ("created_at", "updated_at")
+
+    def validate(self, attrs: dict) -> dict:
+        if "observacion" in attrs and attrs["observacion"] is None:
+            attrs["observacion"] = ""
+        return super().validate(attrs)
 
 
 class ResumenFinancieroSerializer(serializers.Serializer):
