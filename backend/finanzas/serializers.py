@@ -48,7 +48,12 @@ class PartidaSerializer(serializers.ModelSerializer[Partida]):
         queryset = obj.gastos.filter(fecha__gte=inicio, fecha__lt=fin)
         if usuario is not None and usuario.is_authenticated:
             queryset = queryset.filter(usuario=usuario)
-        return queryset.aggregate(total=Sum("monto")).get("total") or Decimal("0.00")
+        total = queryset.aggregate(total=Sum("monto")).get("total")
+        if total is None:
+            return Decimal("0.00")
+        if not isinstance(total, Decimal):
+            total = Decimal(str(total))
+        return total.quantize(Decimal("0.01"))
 
     def get_disponible_mes(self, obj: Partida) -> Decimal:
         gastado = self.get_gastado_mes(obj)
@@ -59,6 +64,12 @@ class GastoSerializer(serializers.ModelSerializer[Gasto]):
     """Serializer for expense records."""
 
     partida_nombre = serializers.SerializerMethodField()
+    categoria = serializers.CharField(
+        allow_blank=True, allow_null=True, required=False
+    )
+    observacion = serializers.CharField(
+        allow_blank=True, allow_null=True, required=False
+    )
 
     class Meta:
         model = Gasto
@@ -84,15 +95,32 @@ class GastoSerializer(serializers.ModelSerializer[Gasto]):
     def validate(self, attrs: dict) -> dict:
         categoria = attrs.get("categoria")
         partida = attrs.get("partida")
+
+        if self.instance is not None:
+            if categoria in (None, ""):
+                categoria = self.instance.categoria
+            if partida is None:
+                partida = self.instance.partida
+
         if not categoria and not partida:
             raise serializers.ValidationError(
                 "Debes seleccionar una partida o indicar una categoría para el gasto."
             )
+
+        if "categoria" in attrs and attrs["categoria"] is None:
+            attrs["categoria"] = ""
+        if "observacion" in attrs and attrs["observacion"] is None:
+            attrs["observacion"] = ""
+
         return super().validate(attrs)
 
 
 class IngresoSerializer(serializers.ModelSerializer[Ingreso]):
     """Serializer for income records."""
+
+    observacion = serializers.CharField(
+        allow_blank=True, allow_null=True, required=False
+    )
 
     class Meta:
         model = Ingreso
@@ -106,6 +134,11 @@ class IngresoSerializer(serializers.ModelSerializer[Ingreso]):
             "updated_at",
         ]
         read_only_fields = ("created_at", "updated_at")
+
+    def validate(self, attrs: dict) -> dict:
+        if "observacion" in attrs and attrs["observacion"] is None:
+            attrs["observacion"] = ""
+        return super().validate(attrs)
 
 
 class ResumenFinancieroSerializer(serializers.Serializer):
@@ -148,9 +181,9 @@ class ResumenFinancieroSerializer(serializers.Serializer):
             "total_gastos": total_gastos,
             "saldo": saldo,
             "ahorro_porcentaje": ahorro_porcentaje,
-            "gastos_por_categoria": categorias,
-            "partidas": PartidaSerializer(partidas, many=True).data,
+            "gastos_por_categoria": dict(categorias),
+            "partidas": partidas,
             "sugerencias": sugerencias,
-            "ingresos_recientes": IngresoSerializer(ingresos[:5], many=True).data,
-            "gastos_recientes": GastoSerializer(gastos[:5], many=True).data,
+            "ingresos_recientes": ingresos[:5],
+            "gastos_recientes": gastos[:5],
         }
