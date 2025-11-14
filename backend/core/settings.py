@@ -19,7 +19,7 @@ ALLOWED_HOSTS = [host for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").spl
     "localhost",
     "127.0.0.1",
     "192.168.0.169",
-    "finova.em-ind.cl",   # 👈 agrega tu IP LAN
+    "finova.inerva.cl",   # 👈 agrega tu IP LAN
 ]
 
 
