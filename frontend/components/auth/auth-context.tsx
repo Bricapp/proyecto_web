@@ -15,8 +15,12 @@ import {
   LoginPayload,
   TokenResponse,
   UserProfile,
+  confirmPasswordReset,
   fetchProfile,
-  login as loginRequest
+  login as loginRequest,
+  loginWithGoogle as loginWithGoogleRequest,
+  requestPasswordReset,
+  updateProfile as updateProfileRequest
 } from "@/lib/api";
 
 type AuthContextValue = {
@@ -25,8 +29,20 @@ type AuthContextValue = {
   refreshToken: string | null;
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: (options?: { redirect?: boolean }) => void;
   refreshProfile: (token?: string) => Promise<void>;
+  updateProfile: (
+    payload: {
+      first_name?: string;
+      last_name?: string;
+      phone?: string;
+      photo?: File | null;
+      remove_photo?: boolean;
+    }
+  ) => Promise<UserProfile>;
+  requestPasswordReset: (email: string) => Promise<{ detail: string }>;
+  confirmPasswordReset: (payload: { uid: string; token: string; password: string }) => Promise<{ detail: string }>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -38,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const persistTokens = useCallback((tokens: TokenResponse | null) => {
+  const persistTokens = useCallback((tokens: Pick<TokenResponse, "access" | "refresh"> | null) => {
     if (typeof window === "undefined") return;
     if (tokens) {
       localStorage.setItem("accessToken", tokens.access);
@@ -89,14 +105,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const tokens = await loginRequest(payload);
         setAccessToken(tokens.access);
         setRefreshToken(tokens.refresh);
+        setUser(tokens.user);
         persistTokens(tokens);
-        await refreshProfile(tokens.access);
         router.push("/");
       } finally {
         setIsLoading(false);
       }
     },
-    [persistTokens, refreshProfile, router]
+    [persistTokens, router]
+  );
+
+  const loginWithGoogle = useCallback(
+    async (idToken: string) => {
+      setIsLoading(true);
+      try {
+        const tokens = await loginWithGoogleRequest(idToken);
+        setAccessToken(tokens.access);
+        setRefreshToken(tokens.refresh);
+        setUser(tokens.user);
+        persistTokens(tokens);
+        router.push("/");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [persistTokens, router]
   );
 
   const logout = useCallback(
@@ -104,6 +137,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearSession({ redirect });
     },
     [clearSession]
+  );
+
+  const updateProfile = useCallback(
+    async (payload: {
+      first_name?: string;
+      last_name?: string;
+      phone?: string;
+      photo?: File | null;
+      remove_photo?: boolean;
+    }) => {
+      if (!accessToken) {
+        throw new Error("No hay una sesión activa");
+      }
+      const updated = await updateProfileRequest(accessToken, payload);
+      setUser(updated);
+      return updated;
+    },
+    [accessToken]
+  );
+
+  const requestPasswordResetHandler = useCallback(async (email: string) => {
+    return requestPasswordReset(email);
+  }, []);
+
+  const confirmPasswordResetHandler = useCallback(
+    async (payload: { uid: string; token: string; password: string }) => {
+      return confirmPasswordReset(payload);
+    },
+    []
   );
 
   useEffect(() => {
@@ -129,8 +191,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refreshProfile]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, accessToken, refreshToken, isLoading, login, logout, refreshProfile }),
-    [user, accessToken, refreshToken, isLoading, login, logout, refreshProfile]
+    () => ({
+      user,
+      accessToken,
+      refreshToken,
+      isLoading,
+      login,
+      loginWithGoogle,
+      logout,
+      refreshProfile,
+      updateProfile,
+      requestPasswordReset: requestPasswordResetHandler,
+      confirmPasswordReset: confirmPasswordResetHandler
+    }),
+    [
+      user,
+      accessToken,
+      refreshToken,
+      isLoading,
+      login,
+      loginWithGoogle,
+      logout,
+      refreshProfile,
+      updateProfile,
+      requestPasswordResetHandler,
+      confirmPasswordResetHandler
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
