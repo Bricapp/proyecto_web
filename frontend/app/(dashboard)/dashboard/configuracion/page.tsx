@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import clsx from "clsx";
@@ -24,6 +26,18 @@ type FormValues = z.infer<typeof schema>;
 
 export default function ConfiguracionPage() {
   const { user, accessToken, refreshProfile } = useAuth();
+  const createdAt = useMemo(() => {
+    if (!user?.created_at) return "-";
+    try {
+      return new Date(user.created_at).toLocaleDateString("es-CL", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+    } catch (error) {
+      return user.created_at;
+    }
+  }, [user?.created_at]);
   const {
     register,
     handleSubmit,
@@ -47,30 +61,44 @@ export default function ConfiguracionPage() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,420px)_1fr]">
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">Perfil de usuario</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Actualiza tu información básica y revisa los datos asociados a tu cuenta.
-        </p>
+      <section className="flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900">Configuración de la cuenta</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Ajusta aspectos generales de Finova y consulta la información vinculada a tu suscripción.
+          </p>
 
-        <dl className="mt-6 space-y-4 text-sm text-slate-600">
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-slate-400">Nombre completo</dt>
-            <dd className="mt-1 text-base font-semibold text-slate-900">
-              {user?.first_name || user?.last_name
-                ? `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim()
-                : "Sin información"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-slate-400">Usuario</dt>
-            <dd className="mt-1 text-base font-semibold text-slate-900">{user?.username}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-slate-400">Correo electrónico</dt>
-            <dd className="mt-1 text-base font-semibold text-slate-900">{user?.email || "No registrado"}</dd>
-          </div>
-        </dl>
+          <dl className="mt-6 space-y-4 text-sm text-slate-600">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-slate-400">Correo principal</dt>
+              <dd className="mt-1 text-base font-semibold text-slate-900">{user?.email || "No registrado"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-slate-400">Rol</dt>
+              <dd className="mt-1 text-base font-semibold text-slate-900">{user?.username}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-slate-400">Miembro desde</dt>
+              <dd className="mt-1 text-base font-semibold text-slate-900">{createdAt}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          <p className="font-semibold text-slate-900">¿Necesitas actualizar tus datos personales?</p>
+          <p className="mt-1">
+            Modifica tu nombre, teléfono o fotografía desde la sección de perfil.
+          </p>
+          <Link
+            href="/dashboard/perfil"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            Ir al perfil
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        </div>
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

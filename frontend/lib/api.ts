@@ -1,21 +1,43 @@
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "production" ? "https://finova.inerva.cl/api" : "http://localhost:8000")
+).replace(/\/$/, "");
 
 export type LoginPayload = {
-  username: string;
+  email: string;
   password: string;
+};
+
+export type RegisterPayload = {
+  email: string;
+  password: string;
+  recaptcha_token: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
 };
 
 export type TokenResponse = {
   access: string;
   refresh: string;
+  user: UserProfile;
+};
+
+export type AuthConfig = {
+  google_client_id: string;
+  recaptcha_site_key: string;
 };
 
 export type UserProfile = {
   id: number;
-  username: string;
   email: string;
   first_name: string;
   last_name: string;
+  full_name: string;
+  username: string;
+  phone: string | null;
+  avatar_url: string | null;
+  created_at: string;
 };
 
 export type Partida = {
@@ -68,6 +90,7 @@ type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   token?: string;
+  headers?: Record<string, string>;
 };
 
 type PartidaResponse = Omit<Partida, "monto_asignado" | "gastado_mes" | "disponible_mes"> & {
@@ -95,8 +118,75 @@ export async function login(payload: LoginPayload): Promise<TokenResponse> {
   return request<TokenResponse>("/api/v1/auth/login/", { method: "POST", body: payload });
 }
 
+export async function register(payload: RegisterPayload): Promise<TokenResponse> {
+  return request<TokenResponse>("/api/v1/auth/register/", { method: "POST", body: payload });
+}
+
+export async function fetchAuthConfig(): Promise<AuthConfig> {
+  return request<AuthConfig>("/api/v1/auth/config/");
+}
+
 export async function fetchProfile(accessToken: string): Promise<UserProfile> {
   return request<UserProfile>("/api/v1/auth/me/", { token: accessToken });
+}
+
+export async function updateProfile(
+  token: string,
+  payload: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    photo?: File | null;
+    remove_photo?: boolean;
+  }
+): Promise<UserProfile> {
+  const formData = new FormData();
+  if (payload.first_name !== undefined) {
+    formData.append("first_name", payload.first_name);
+  }
+  if (payload.last_name !== undefined) {
+    formData.append("last_name", payload.last_name);
+  }
+  if (payload.phone !== undefined) {
+    formData.append("phone", payload.phone ?? "");
+  }
+  if (payload.photo instanceof File) {
+    formData.append("photo", payload.photo);
+  }
+  if (payload.remove_photo) {
+    formData.append("remove_photo", "true");
+  }
+
+  return request<UserProfile>("/api/v1/auth/me/", {
+    method: "PATCH",
+    body: formData,
+    token
+  });
+}
+
+export async function loginWithGoogle(idToken: string): Promise<TokenResponse> {
+  return request<TokenResponse>("/api/v1/auth/login/google/", {
+    method: "POST",
+    body: { id_token: idToken }
+  });
+}
+
+export async function requestPasswordReset(email: string): Promise<{ detail: string }> {
+  return request<{ detail: string }>("/api/v1/auth/password/reset/", {
+    method: "POST",
+    body: { email }
+  });
+}
+
+export async function confirmPasswordReset(payload: {
+  uid: string;
+  token: string;
+  password: string;
+}): Promise<{ detail: string }> {
+  return request<{ detail: string }>("/api/v1/auth/password/reset/confirm/", {
+    method: "POST",
+    body: payload
+  });
 }
 
 export async function changePassword(
@@ -244,12 +334,17 @@ export async function fetchResumenFinanciero(token: string): Promise<ResumenFina
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = "GET", body, token } = options;
-  const headers: Record<string, string> = {};
+  const { method = "GET", body, token, headers: customHeaders } = options;
+  const headers: Record<string, string> = { ...(customHeaders ?? {}) };
 
-  if (body !== undefined) {
+  let payload: BodyInit | undefined;
+  if (body instanceof FormData) {
+    payload = body;
+  } else if (body !== undefined) {
     headers["Content-Type"] = "application/json";
+    payload = JSON.stringify(body);
   }
+
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -257,7 +352,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined
+    body: payload
   });
 
   if (!response.ok) {

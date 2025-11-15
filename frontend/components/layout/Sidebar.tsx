@@ -9,7 +9,7 @@ import { FinovaLogo } from "@/components/FinovaLogo";
 const navItems = [
   {
     label: "Resumen",
-    href: "/",
+    href: "/dashboard",
     icon: (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
         <path d="M4 12h4v8H4zM10 4h4v16h-4zM16 9h4v11h-4z" strokeLinecap="round" strokeLinejoin="round" />
@@ -18,7 +18,7 @@ const navItems = [
   },
   {
     label: "Gastos",
-    href: "/gastos",
+    href: "/dashboard/gastos",
     icon: (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
         <path
@@ -31,7 +31,7 @@ const navItems = [
   },
   {
     label: "Ingresos",
-    href: "/ingresos",
+    href: "/dashboard/ingresos",
     icon: (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
         <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -40,7 +40,7 @@ const navItems = [
   },
   {
     label: "Presupuesto",
-    href: "/presupuesto",
+    href: "/dashboard/presupuesto",
     icon: (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
         <path d="M4 7h16M4 12h16M4 17h10" strokeLinecap="round" strokeLinejoin="round" />
@@ -49,7 +49,7 @@ const navItems = [
   },
   {
     label: "Reportes",
-    href: "/reportes",
+    href: "/dashboard/reportes",
     icon: (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
         <path
@@ -61,8 +61,21 @@ const navItems = [
     )
   },
   {
+    label: "Perfil",
+    href: "/dashboard/perfil",
+    icon: (
+      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
+        <path
+          d="M12 12a4 4 0 100-8 4 4 0 000 8zM6 20a6 6 0 0112 0"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    )
+  },
+  {
     label: "Configuración",
-    href: "/configuracion",
+    href: "/dashboard/configuracion",
     icon: (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
         <path
@@ -121,7 +134,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         <nav className="flex-1 space-y-2 text-sm font-medium">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.href}

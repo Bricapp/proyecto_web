@@ -2,8 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import clsx from "clsx";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+
+import { formatCLP, parseCLP } from "@/lib/currency";
 
 const schema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio"),
@@ -35,6 +37,7 @@ export function BudgetForm({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors }
   } = useForm<BudgetFormValues>({
     resolver: zodResolver(schema),
@@ -85,15 +88,24 @@ export function BudgetForm({
           <label className="block text-sm font-semibold text-slate-700" htmlFor="monto_asignado">
             Monto mensual asignado
           </label>
-          <input
-            id="monto_asignado"
-            type="number"
-            step="0.01"
-            className={clsx(
-              "mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-200",
-              errors.monto_asignado && "border-rose-300"
+          <Controller
+            control={control}
+            name="monto_asignado"
+            render={({ field }) => (
+              <input
+                id="monto_asignado"
+                type="text"
+                inputMode="numeric"
+                className={clsx(
+                  "mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-200",
+                  errors.monto_asignado && "border-rose-300"
+                )}
+                value={field.value ? formatCLP(field.value) : ""}
+                onChange={(event) => field.onChange(parseCLP(event.target.value))}
+                onBlur={(event) => field.onChange(parseCLP(event.target.value))}
+                placeholder="$0"
+              />
             )}
-            {...register("monto_asignado", { valueAsNumber: true })}
           />
           {errors.monto_asignado && (
             <p className="mt-1 text-sm text-rose-500">{errors.monto_asignado.message}</p>

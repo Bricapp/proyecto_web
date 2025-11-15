@@ -2,8 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import clsx from "clsx";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+
+import { formatCLP, parseCLP } from "@/lib/currency";
 
 const schema = z.object({
   monto: z
@@ -36,6 +38,7 @@ export function IncomeForm({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors }
   } = useForm<IncomeFormValues>({
     resolver: zodResolver(schema),
@@ -52,15 +55,24 @@ export function IncomeForm({
         <label className="block text-sm font-semibold text-slate-700" htmlFor="monto">
           Monto
         </label>
-        <input
-          id="monto"
-          type="number"
-          step="0.01"
-          className={clsx(
-            "mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-200",
-            errors.monto && "border-rose-300"
+        <Controller
+          control={control}
+          name="monto"
+          render={({ field }) => (
+            <input
+              id="monto"
+              type="text"
+              inputMode="numeric"
+              className={clsx(
+                "mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-200",
+                errors.monto && "border-rose-300"
+              )}
+              value={field.value ? formatCLP(field.value) : ""}
+              onChange={(event) => field.onChange(parseCLP(event.target.value))}
+              onBlur={(event) => field.onChange(parseCLP(event.target.value))}
+              placeholder="$0"
+            />
           )}
-          {...register("monto", { valueAsNumber: true })}
         />
         {errors.monto && <p className="mt-1 text-sm text-rose-500">{errors.monto.message}</p>}
       </div>

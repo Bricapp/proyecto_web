@@ -62,7 +62,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://finova.em-ind.cl",
-    
+    "https://finova.inerva.cl",
+
 ]
 
 # Muy importante detrás de proxy:
@@ -129,6 +130,9 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
@@ -145,3 +149,24 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.environ.get("JWT_REFRESH_DAYS", "1"))),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Finova <no-reply@finova.local>")
+
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://finova.inerva.cl")
+FRONTEND_PASSWORD_RESET_URL = os.environ.get(
+    "FRONTEND_PASSWORD_RESET_URL", f"{FRONTEND_URL.rstrip('/')}/recuperar-clave"
+)
+
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get(
+    "GOOGLE_OAUTH_CLIENT_ID",
+    "336385441890-aglscohlmtrsvka174f695j7l2u9f75f.apps.googleusercontent.com",
+)
+GOOGLE_RECAPTCHA_SITE_KEY = os.environ.get("GOOGLE_RECAPTCHA_SITE_KEY", "")
+GOOGLE_RECAPTCHA_SECRET_KEY = os.environ.get("GOOGLE_RECAPTCHA_SECRET_KEY", "")
+try:
+    GOOGLE_RECAPTCHA_MIN_SCORE = float(os.environ.get("GOOGLE_RECAPTCHA_MIN_SCORE", "0.5"))
+except ValueError:
+    GOOGLE_RECAPTCHA_MIN_SCORE = 0.5

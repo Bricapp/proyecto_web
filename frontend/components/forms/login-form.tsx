@@ -10,7 +10,7 @@ import { z } from "zod";
 import { useAuth } from "@/components/auth/auth-context";
 
 const schema = z.object({
-  username: z.string().min(1, "El usuario es obligatorio"),
+  email: z.string().min(1, "El correo es obligatorio").email("Ingresa un correo válido"),
   password: z.string().min(1, "La contraseña es obligatoria")
 });
 
@@ -96,21 +96,21 @@ export function LoginForm({ variant = "light" }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="space-y-2">
-        <label className={labelStyles} htmlFor="username">
-          Usuario
+        <label className={labelStyles} htmlFor="email">
+          Correo electrónico
         </label>
         <input
-          id="username"
-          type="text"
-          autoComplete="username"
+          id="email"
+          type="email"
+          autoComplete="email"
           className={fieldStyles}
-          aria-invalid={Boolean(errors.username)}
-          aria-describedby={errors.username ? "username-error" : undefined}
-          {...register("username", { onChange: () => setFormError(null) })}
+          aria-invalid={Boolean(errors.email)}
+          aria-describedby={errors.email ? "email-error" : undefined}
+          {...register("email", { onChange: () => setFormError(null) })}
         />
-        {errors.username && (
-          <p id="username-error" className={errorTextStyles} role="alert">
-            {errors.username.message}
+        {errors.email && (
+          <p id="email-error" className={errorTextStyles} role="alert">
+            {errors.email.message}
           </p>
         )}
       </div>
